@@ -9,6 +9,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import numpy as np
 import tensorflow as tf
 import cv2
+import base64
+import PIL.Image
+import requests
 
 from retinaface.model import retinaface_model
 from retinaface.commons import preprocess, postprocess
@@ -37,21 +40,41 @@ def build_model():
 
     return model
 
-def get_image(img_path):
-    if type(img_path) == str:  # Load from file path
-        if not os.path.isfile(img_path):
-            raise ValueError("Input image file path (", img_path, ") does not exist.")
-        img = cv2.imread(img_path)
+import base64
 
-    elif isinstance(img_path, np.ndarray):  # Use given NumPy array
-        img = img_path.copy()
+def loadBase64Img(uri):
+    encoded_data = uri.split(",")[1]
+    nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    return img
 
-    else:
-        raise ValueError("Invalid image input. Only file paths or a NumPy array accepted.")
+def load_image(img):
+    exact_image = False
+    base64_img = False
+    url_img = False
 
-    # Validate image shape
-    if len(img.shape) != 3 or np.prod(img.shape) == 0:
-        raise ValueError("Input image needs to have 3 channels at must not be empty.")
+    if type(img).__module__ == np.__name__:
+        exact_image = True
+
+    elif img.startswith("data:image/"):
+        base64_img = True
+
+    elif img.startswith("http"):
+        url_img = True
+
+    # ---------------------------
+
+    if base64_img is True:
+        img = loadBase64Img(img)
+
+    elif url_img is True:
+        img = np.array(PIL.Image.open(requests.get(img, stream=True, timeout=60).raw).convert("RGB"))
+
+    elif exact_image is not True:  # image path passed as input
+        if os.path.isfile(img) is not True:
+            raise ValueError(f"Confirm that {img} exists")
+
+        img = cv2.imread(img)
 
     return img
 
