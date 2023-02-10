@@ -48,7 +48,7 @@ def loadBase64Img(uri):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
 
-def load_image(img):
+def get_image(img):
     exact_image = False
     base64_img = False
     url_img = False
