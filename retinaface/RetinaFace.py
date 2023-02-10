@@ -40,8 +40,6 @@ def build_model():
 
     return model
 
-import base64
-
 def loadBase64Img(uri):
     encoded_data = uri.split(",")[1]
     nparr = np.fromstring(base64.b64decode(encoded_data), np.uint8)
